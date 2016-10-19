@@ -1,7 +1,9 @@
 Steps for generating dblp graph
 
-1) Run dblpXMLParser.java
-2) Run create_dblp_graph.java
+1) Download http://dblp.uni-trier.de/xml/dblp.xml.gz
+2) Place dblp.xml to DBLP_Graph_Generator
+3) Run src/dblpXMLParser.java
+4) Run src/create_dblp_graph.java
 
 Output:
 	dblp_graph > id \t id \t year
