@@ -54,7 +54,6 @@ public class CreateDBLPGraph {
 				// map author to a unique id
 				if (!allAuthors.containsKey(author)) {
 					allAuthors.put(author, id);
-					w_authors.write(id + "\t" + author + "\n");
 					id++;
 				}
 			} else if (line.contains("Title: ")) {
@@ -67,6 +66,9 @@ public class CreateDBLPGraph {
 			}
 		}
 		input.close();
+
+		// for the last publication
+		writeF(booktitle, title, year, authors);
 
 		// write only authors that published a paper in CONFERENCES
 		for (Entry<String, Integer> entry : allAuthors.entrySet()) {
