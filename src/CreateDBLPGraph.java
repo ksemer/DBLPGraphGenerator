@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map.Entry;
 
 /**
  * Creates the DBLP graph author1 \t author 2 \t time
@@ -19,13 +20,14 @@ public class CreateDBLPGraph {
 	private final String PATH_DBLP_AUTHORS_MAP = "dblp_authors_ids";
 	private final String PATH_DBLP_GRAPH = "dblp_graph";
 	private final String PATH_DBLP_AUTHORS_CONFERENCES = "dblp_authors_conf";
-	
+
 	// Create graph from specific conferences
 	private final Set<String> CONFERENCES = new HashSet<String>(Arrays.asList("ICDE", "VLDB", "EDBT",
 			"SIGMOD Conference", "KDD", "KDD Cup", "WWW", "SIGIR", "CIKM", "SDM", "ICDM", "WWW (Companion Volume)"));
 
 	// is used to replace authors names with a unique id.
 	private HashMap<String, Integer> allAuthors = new HashMap<String, Integer>();
+	private Set<Integer> authors_f = new HashSet<>();
 	private FileWriter w_graph = new FileWriter(PATH_DBLP_GRAPH, false);
 	private FileWriter w_authors = new FileWriter(PATH_DBLP_AUTHORS_MAP, false);
 	private FileWriter w_authors_conf = new FileWriter(PATH_DBLP_AUTHORS_CONFERENCES, false);
@@ -65,6 +67,15 @@ public class CreateDBLPGraph {
 			}
 		}
 		input.close();
+
+		// write only authors that published a paper in CONFERENCES
+		for (Entry<String, Integer> entry : allAuthors.entrySet()) {
+			int authorID = entry.getValue();
+
+			if (authors_f.contains(authorID))
+				w_authors.write(authorID + "\t" + entry.getKey() + "\n");
+		}
+
 		w_graph.close();
 		w_authors.close();
 		w_authors_conf.close();
@@ -74,6 +85,7 @@ public class CreateDBLPGraph {
 
 	/**
 	 * Write dblp graph and authors conferences to files
+	 * 
 	 * @param booktitle
 	 * @param title
 	 * @param year
@@ -86,12 +98,17 @@ public class CreateDBLPGraph {
 
 			// Write the authors
 			for (int i = 0; i < authors.size(); i++) {
-				int authorA = allAuthors.get(authors.get(i));	
-		    	w_authors_conf.write(authorA + "\t" + booktitle + "\n");
+				int authorA = allAuthors.get(authors.get(i));
+
+				authors_f.add(authorA);
+				w_authors_conf.write(authorA + "\t" + booktitle + "\n");
 
 				for (int j = i + 1; j < authors.size(); j++) {
+					int authorB = allAuthors.get(authors.get(j));
+					authors_f.add(authorB);
+
 					// write graph edge
-					w_graph.write(authorA + "\t" + allAuthors.get(authors.get(j)) + "\t" + year + "\n");
+					w_graph.write(authorA + "\t" + authorB + "\t" + year + "\n");
 				}
 			}
 		}
