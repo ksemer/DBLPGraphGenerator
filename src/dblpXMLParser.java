@@ -6,9 +6,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -22,127 +25,124 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * dplb parser
  * Requires: -Djdk.xml.entityExpansionLimit=0
- * 
- * @author ksemer 
+ *
+ * @author ksemer
  */
 public class dblpXMLParser extends DefaultHandler {
-	private static String DATASET = "dblp.xml";
-	private String outputPath = "dblp.txt";
-	private String temp;
-	private boolean get = false, getName = false;
-	private List<String> list = new ArrayList<String>();
+    private static String DATASET = "dblp.xml";
+    private String temp;
+    private boolean get = false, getName = false;
+    private List<String> list = new ArrayList<>();
+    private static final Logger _logger = Logger.getLogger(dblpXMLParser.class.getName());
 
-	/**
-	 * Every time the parser encounters the beginning of a new element, it calls
-	 * this method, which resets the string buffer
-	 */
-	public void startElement(String uri, String localName, String qName, Attributes attributes) {
-		temp = "";
+    /**
+     * Every time the parser encounters the beginning of a new element, it calls
+     * this method, which resets the string buffer
+     */
+    public void startElement(String uri, String localName, String qName, Attributes attributes) {
+        temp = "";
 
-		if (qName.equalsIgnoreCase("inproceedings"))
-			get = true;
+        if (qName.equalsIgnoreCase("inproceedings"))
+            get = true;
 
-		if (qName.equalsIgnoreCase("author"))
-			getName = true;
-	}
+        if (qName.equalsIgnoreCase("author"))
+            getName = true;
+    }
 
-	/**
-	 * When the parser encounters plain text (not XML elements), it calls(this
-	 * method, which accumulates them in a string buffer
-	 */
-	public void characters(char buffer[], int start, int length) throws SAXException {
-		if (getName) {
-			temp += new String(buffer, start, length);
-		} else {
-			temp = new String(buffer, start, length);
-		}
-	}
+    /**
+     * When the parser encounters plain text (not XML elements), it calls(this
+     * method, which accumulates them in a string buffer
+     */
+    public void characters(char[] buffer, int start, int length) {
+        if (getName) {
+            temp += new String(buffer, start, length);
+        } else {
+            temp = new String(buffer, start, length);
+        }
+    }
 
-	/**
-	 * When the parser encounters the end of an element, it calls this method
-	 */
-	public void endElement(String uri, String localName, String qName) {
-		if (get) {
-			if (qName.equalsIgnoreCase("author")) {
-				list.add("Author: " + temp + "\n");
-				getName = false;
-			} else if (qName.equalsIgnoreCase("title"))
-				list.add("Title: " + temp + "\n");
-			else if (qName.equalsIgnoreCase("pages"))
-				list.add("Pages: " + temp + "\n");
-			else if (qName.equalsIgnoreCase("year"))
-				list.add("Year: " + temp + "\n");
-			else if (qName.equalsIgnoreCase("booktitle"))
-				list.add("Booktitle: " + temp + "\n");
-			if (qName.equalsIgnoreCase("inproceedings"))
-				get = false;
-		}
-	}
+    /**
+     * When the parser encounters the end of an element, it calls this method
+     */
+    public void endElement(String uri, String localName, String qName) {
+        if (get) {
+            if (qName.equalsIgnoreCase("author")) {
+                list.add("Author: " + temp + "\n");
+                getName = false;
+            } else if (qName.equalsIgnoreCase("title"))
+                list.add("Title: " + temp + "\n");
+            else if (qName.equalsIgnoreCase("pages"))
+                list.add("Pages: " + temp + "\n");
+            else if (qName.equalsIgnoreCase("year"))
+                list.add("Year: " + temp + "\n");
+            else if (qName.equalsIgnoreCase("booktitle"))
+                list.add("Booktitle: " + temp + "\n");
+            if (qName.equalsIgnoreCase("inproceedings"))
+                get = false;
+        }
+    }
 
-	/**
-	 * Write the list's data to a file
-	 * 
-	 * @throws IOException
-	 */
-	public void write() throws IOException {
-		// write author \t his id
-		BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath), "UTF-8"));
+    /**
+     * Write the list's data to a file
+     */
+    private void write() throws IOException {
+        // write author \t his id
+        String outputPath = "dblp.txt";
+        BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath), StandardCharsets.UTF_8));
 
-		for (String l : list) {
-			w.write(l);
-		}
-		w.close();
-	}
+        for (String l : list) {
+            w.write(l);
+        }
+        w.close();
+    }
 
-	/**
-	 * Unescape DBLP xml
-	 * 
-	 * @throws IOException
-	 */
-	private static void uneScapeDBLP() throws IOException {
-		BufferedReader buffy = new BufferedReader(new FileReader(new File(DATASET)));
-		FileWriter fw = new FileWriter(new File(DATASET + "_unescape"));
-		String line = "";
+    /**
+     * Unescape DBLP xml
+     */
+    private static void uneScapeDBLP() throws IOException {
+        BufferedReader buffy = new BufferedReader(new FileReader(new File(DATASET)));
+        FileWriter fw = new FileWriter(new File(DATASET + "_unescape"));
+        String line;
 
-		while ((line = buffy.readLine()) != null) {
-			if (line.startsWith("<author>")) {
-				String newLine = StringEscapeUtils.unescapeHtml4(line);
-				newLine = Normalizer.normalize(newLine, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "");
-				fw.write(newLine + "\n");
-			} else
-				fw.write(line + "\n");
-		}
-		fw.close();
-		buffy.close();
+        while ((line = buffy.readLine()) != null) {
+            if (line.startsWith("<author>")) {
+                String newLine = StringEscapeUtils.unescapeHtml4(line);
+                newLine = Normalizer.normalize(newLine, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "");
+                fw.write(newLine + "\n");
+            } else
+                fw.write(line + "\n");
+        }
+        fw.close();
+        buffy.close();
 
-		File file = new File(DATASET);
-		file.delete();
-		file = new File(DATASET + "_unescape");
-		file.renameTo(new File(DATASET));
-	}
+        File file = new File(DATASET);
+        if (!file.delete()) {
+            _logger.log(Level.WARNING, file.getName() + " could not be deleted.");
+        }
 
-	/**
-	 * Main
-	 * 
-	 * @param args
-	 * @throws IOException
-	 * @throws ParserConfigurationException
-	 * @throws SAXException
-	 */
-	public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException {
-		SAXParserFactory spfac = SAXParserFactory.newInstance();
+        file = new File(DATASET + "_unescape");
+        if (!file.renameTo(new File(DATASET))) {
+            _logger.log(Level.WARNING, file.getName() + " could not be renamed.");
+        }
+    }
 
-		// Now use the parser factory to create a SAXParser object
-		SAXParser sp = spfac.newSAXParser();
+    /**
+     * Main
+     */
+    public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException {
+        SAXParserFactory spfac = SAXParserFactory.newInstance();
 
-		uneScapeDBLP();
+        // Now use the parser factory to create a SAXParser object
+        SAXParser sp = spfac.newSAXParser();
 
-		// Create an instance of this class; it defines all the handler methods
-		dblpXMLParser handler = new dblpXMLParser();
+        uneScapeDBLP();
 
-		// Finally, tell the parser to parse the input and notify the handler
-		sp.parse(DATASET, handler);
+        // Create an instance of this class; it defines all the handler methods
+        dblpXMLParser handler = new dblpXMLParser();
 
-		handler.write();
-	}
+        // Finally, tell the parser to parse the input and notify the handler
+        sp.parse(DATASET, handler);
+
+        handler.write();
+    }
 }
