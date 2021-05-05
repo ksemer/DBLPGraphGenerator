@@ -1,3 +1,4 @@
+# python 2.7
 import sys
 import chgender
 import gender_guesser.detector as gender
@@ -5,8 +6,8 @@ from gender_detector import GenderDetector
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-f = open("dblp_authors_ids", "r")
-w = open("dblp_authors_ids_gender", "w")
+f = open("dblp_authors_ids_replaced", "r")
+w = open("dblp_authors_ids_replaced_gender", "w")
 d = gender.Detector()
 detector = GenderDetector('us')
 
@@ -18,7 +19,11 @@ for line in f:
    g = d.get_gender(name)
    g = "male" if g == "mostly_male" else "female" if g == "mostly_female" else g
    if g == "unknown" or g == "andy":
-   	g1 = detector.guess(name) 
-   	g = g1 if g1 != "unknown" else chgender.guess(name)[0]
+   	try:
+   		g1 = detector.guess(name) 
+   		g = g1 if g1 != "unknown" else chgender.guess(name)[0]
+   	except:
+   		print(full_name)
+   		g = "unknown"
    w.write(id_ + "\t" + name + "\t" + g.strip() + "\n")   
 w.close()

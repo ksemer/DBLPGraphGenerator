@@ -32,8 +32,13 @@ class Counter {
 public class CreateDBLPGraph {
 
     // Create graph from specific conferences
-    private final Set<String> CONFERENCES = new HashSet<>(Arrays.asList("ICDE", "VLDB", "EDBT",
-            "SIGMOD Conference", "KDD", "KDD Cup", "WSDM", "WWW", "SIGIR", "CIKM", "SDM", "ICDM", "WWW (Companion Volume)"));
+    private Set<String> CONFERENCES = new HashSet<>(Arrays.asList("ICDE", "VLDB", "EDBT",
+            "SIGMOD Conference", "KDD", "WSDM", "WWW", "SIGIR", "CIKM", "ICDM"));
+    
+    private Set<String> FOUND = new HashSet<>();
+    
+    private final Integer START_YEAR = 2011;
+    private final Integer END_YEAR = 2020;
 
     // is used to replace authors names with a unique id.
     private HashMap<String, Integer> allAuthors = new HashMap<>();
@@ -123,6 +128,8 @@ public class CreateDBLPGraph {
         w_authors_pubs.close();
 
         System.out.println("DBLP graph is generated!");
+        CONFERENCES.removeAll(FOUND);
+        System.out.println("Conferences that could not be found: " + CONFERENCES);
     }
 
     /**
@@ -130,7 +137,9 @@ public class CreateDBLPGraph {
      */
     private void writeF(String booktitle, String title, int year, List<String> authors) throws IOException {
         // Used to generate graph from specific conferences
-        if (title != null && (CONFERENCES.isEmpty() || CONFERENCES.contains(booktitle))) {
+        if (title != null && (START_YEAR == null || year >= START_YEAR) && (END_YEAR == null || year <= END_YEAR) 
+            && (CONFERENCES.isEmpty() || CONFERENCES.contains(booktitle))){// || (CONFERENCES.contains("VLDB") && booktitle.contains("@VLDB")))) {
+            FOUND.add(booktitle);
 
             // Write the authors
             for (int i = 0; i < authors.size(); i++) {
